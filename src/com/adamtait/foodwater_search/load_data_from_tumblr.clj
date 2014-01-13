@@ -1,6 +1,7 @@
 (ns com.adamtait.foodwater-search.load-data-from-tumblr
   (:require [clj-http.client :as http-client]
-            [oauth.client :as oauth-client]))
+            [oauth.client :as oauth-client]
+            [ring.util.response :as response]))
 
 
 (def foodwater-callback-url "http://199.223.234.98/after-oauth")
@@ -18,18 +19,28 @@
                               (:authorize-uri tumblr-oauth-endpoint)
                               :hmac-sha1))
 
-(def foodwater-info-api "http://api.tumblr.com/v2/blog/foodwater.org/info")
-
-(defn new-token-request []
+(def foodwater-request-token
   (oauth-client/request-token foodwater-oauth-consumer
                               foodwater-callback-url))
 
-(defn oauth-callback [request]
-  (println "request /" request "/")
-  (let [access-token-response request
+(def foodwater-info-api "http://api.tumblr.com/v2/blog/foodwater.org/info")
+
+
+(defn new-token-request []
+  (let [tumblr-authorize-uri (oauth-client/user-approval-uri foodwater-oauth-consumer
+                                            (:oauth-token foodwater-request-token))]
+    (response/redirect tumblr-authorize-uri)))
+
+(defn oauth-callback [params]
+  (println "callback params /" params "/")
+  (let [access-token-response (oauth-client/access-token foodwater-oauth-consumer
+                                                         foodwater-request-token
+                                                         (:verifier params))
         credentials (oauth-client/credentials foodwater-oauth-consumer
-                                       (:oauth_token access-token-response)
-                                       (:oauth_token_secret access-token-response)
-                                       :GET
-                                       foodwater-info-api)]
-    (http-client/get foodwater-info-api :query-params credentials)))
+                                              (:oauth_token access-token-response)
+                                              (:oauth_token_secret access-token-response)
+                                              :GET
+                                              foodwater-info-api)
+        foodwater-blog-info (http-client/get foodwater-info-api :query-params credentials)]
+    {:status 200
+     :body foodwater-blog-info}))
