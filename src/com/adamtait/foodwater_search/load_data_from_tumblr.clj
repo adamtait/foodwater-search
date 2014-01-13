@@ -25,9 +25,13 @@
                               (:authorize-uri tumblr-oauth-endpoint)
                               :hmac-sha1))
 
+(def request-token (atom nil))
 (defn get-request-token []
-  (oauth-client/request-token oauth-consumer
-                              callback-url))
+  (when-not @request-token
+    (reset! request-token
+            (oauth-client/request-token oauth-consumer
+                                        callback-url)))
+  @request-token)
 
 
 ;;; Tumblr API endpoints
@@ -61,9 +65,8 @@
 (defn oauth-callback
   "after user authorizes the app, Tumblr lands here. "
   [params]
-  (let [request-token (get-request-token)
-        access-token-response (oauth-client/access-token oauth-consumer
-                                                         request-token
-                                                         (:verifier params))]
+  (let [access-token-response (oauth-client/access-token oauth-consumer
+                                                         (get-request-token)
+                                                         (:oauth_verifier params))]
     {:status 200
      :body (get-blog-info)}))
