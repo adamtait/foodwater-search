@@ -36,16 +36,27 @@
 
 ;;; Tumblr API endpoints
 
-(def info-api "http://api.tumblr.com/v2/blog/foodwater.org/info")
+(def tumblr-api-base "http://api.tumblr.com/v2/blog/foodwater.org/")
 
+(defn get-tumblr-api-uri [endpoint]
+  (str tumblr-api-base
+       (name endpoint)))
 
 ;;; Tumblr API calls
 
 (defn get-blog-info
   "request info about the blog from the tumblr api"
   []
-  (http-client/get info-api {:query-params {:api_key oauth-key}
-                             :throw-exceptions false}))
+  (http-client/get (get-tumblr-api-uri :info)
+                   {:query-params {:api_key oauth-key}
+                    :throw-exceptions false}))
+
+(defn get-blog-posts
+  "request info about the blog from the tumblr api"
+  []
+  (http-client/get (get-tumblr-api-uri :posts)
+                   {:query-params {:api_key oauth-key}
+                    :throw-exceptions false}))
 
 
 ;;; OAuth Flow
@@ -65,5 +76,5 @@
                                                          (get-request-token)
                                                          (:oauth_verifier params))]
     {:status 200
-     :body (get-blog-info (:oauth_token access-token-response)
-                          (:oauth_token_secret access-token-response))}))
+     :body (get-blog-posts (:oauth_token access-token-response)
+                           (:oauth_token_secret access-token-response))}))
