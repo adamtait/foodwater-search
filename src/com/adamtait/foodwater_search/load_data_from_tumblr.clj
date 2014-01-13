@@ -15,12 +15,6 @@
                             :access-uri "http://www.tumblr.com/oauth/access_token"
                             :authorize-uri "http://www.tumblr.com/oauth/authorize"})
 
-;;; Tumblr API endpoints
-
-(def info-api "http://api.tumblr.com/v2/blog/foodwater.org/info")
-
-
-
 ;;; OAuth structures
 
 (def oauth-consumer
@@ -31,9 +25,27 @@
                               (:authorize-uri tumblr-oauth-endpoint)
                               :hmac-sha1))
 
-(defn get-request-token
+(defn get-request-token []
   (oauth-client/request-token oauth-consumer
                               callback-url))
+
+
+;;; Tumblr API endpoints
+
+(def info-api "http://api.tumblr.com/v2/blog/foodwater.org/info")
+
+
+;;; Tumblr API calls
+
+(defn get-blog-info
+  "request info about the blog from the tumblr api"
+  [oauth-token oauth-secret]
+  (let [credentials (oauth-client/credentials oauth-consumer
+                                              oauth-token
+                                              oauth-secret
+                                              :GET
+                                              info-api)]
+    (http-client/get info-api :query-params credentials)))
 
 
 ;;; OAuth Flow
@@ -55,16 +67,3 @@
                                                          (:verifier params))]
     {:status 200
      :body (get-blog-info)}))
-
-
-;;; Tumblr API calls
-
-(defn get-blog-info
-  "request info about the blog from the tumblr api"
-  [oauth-token oauth-secret]
-  (let [credentials (oauth-client/credentials oauth-consumer
-                                              oauth-token
-                                              oauth-secret
-                                              :GET
-                                              info-api)]
-    (http-client/get info-api :query-params credentials)))
