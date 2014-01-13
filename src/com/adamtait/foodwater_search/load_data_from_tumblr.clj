@@ -43,14 +43,9 @@
 
 (defn get-blog-info
   "request info about the blog from the tumblr api"
-  [oauth-token oauth-secret]
-  (let [credentials (oauth-client/credentials oauth-consumer
-                                              oauth-token
-                                              oauth-secret
-                                              :GET
-                                              info-api)]
-    (http-client/get info-api {:query-params credentials
-                               :throw-exceptions false})))
+  []
+  (http-client/get info-api {:query-params {:api_key oauth-key}
+                             :throw-exceptions false}))
 
 
 ;;; OAuth Flow
