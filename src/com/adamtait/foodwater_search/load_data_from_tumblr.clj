@@ -69,4 +69,5 @@
                                                          (get-request-token)
                                                          (:oauth_verifier params))]
     {:status 200
-     :body (get-blog-info)}))
+     :body (get-blog-info (:oauth_token access-token-response)
+                          (:oauth_token_secret access-token-response))}))
