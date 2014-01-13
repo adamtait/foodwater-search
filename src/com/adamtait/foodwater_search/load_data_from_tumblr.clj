@@ -49,7 +49,8 @@
                                               oauth-secret
                                               :GET
                                               info-api)]
-    (http-client/get info-api :query-params credentials)))
+    (http-client/get info-api {:query-params credentials
+                               :throw-exceptions false})))
 
 
 ;;; OAuth Flow
