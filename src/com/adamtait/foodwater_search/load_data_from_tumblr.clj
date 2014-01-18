@@ -1,7 +1,10 @@
 (ns com.adamtait.foodwater-search.load-data-from-tumblr
-  (:require [clj-http.client :as http-client]
+  (:require [clojure.data.json :as json]
+            [clj-http.client :as http-client]
+            [ring.util.response :as response]
             [oauth.client :as oauth-client]
-            [ring.util.response :as response]))
+            [com.adamtait.foodwater-search.routes :refer [routes]]
+            [com.adamtait.foodwater-search.datastore.api :as datastore]))
 
 ;;; Tumblr Foodwater-Search App settings
 
@@ -25,38 +28,45 @@
                               (:authorize-uri tumblr-oauth-endpoint)
                               :hmac-sha1))
 
-(def request-token (atom nil))
-(defn get-request-token []
-  (when-not @request-token
-    (reset! request-token
-            (oauth-client/request-token oauth-consumer
-                                        callback-url)))
-  @request-token)
+(defn- new-request-token []
+  (let [request-token (oauth-client/request-token oauth-consumer
+                                                  callback-url)]
+    (datastore/request-token-save request-token)
+    request-token))
+
+(defn- get-request-token []
+  (datastore/request-token-load))
 
 
 ;;; Tumblr API endpoints
 
 (def tumblr-api-base "http://api.tumblr.com/v2/blog/foodwater.org/")
 
-(defn get-tumblr-api-uri [endpoint]
+(defn- get-tumblr-api-uri [endpoint]
   (str tumblr-api-base
        (name endpoint)))
 
 ;;; Tumblr API calls
 
-(defn get-blog-info
+(defn- get-blog-info
   "request info about the blog from the tumblr api"
   []
   (http-client/get (get-tumblr-api-uri :info)
                    {:query-params {:api_key oauth-key}
                     :throw-exceptions false}))
 
-(defn get-blog-posts
+(defn- get-blog-posts
   "request info about the blog from the tumblr api"
   []
   (http-client/get (get-tumblr-api-uri :posts)
                    {:query-params {:api_key oauth-key}
                     :throw-exceptions false}))
+
+(defn- load-and-save-blog-posts
+  [oauth-token oauth-token-secret]
+  (let [blog-posts-json-response (get-blog-posts oauth-token oauth-token-secret)
+        blog-posts (json/read-str blog-posts-json-response)]
+    (datastore/blog-posts-save blog-posts)))
 
 
 ;;; OAuth Flow
@@ -64,7 +74,7 @@
 (defn new-token-request
   "the first step in the OAuth handshake. gets a request-token, then redirects user to a Tumblr page to authorize access from the app"
   []
-  (let [oauth-token (:oauth_token (get-request-token))
+  (let [oauth-token (:oauth_token (new-request-token))
         tumblr-authorize-uri (oauth-client/user-approval-uri oauth-consumer
                                                              oauth-token)]
     (response/redirect tumblr-authorize-uri)))
@@ -75,6 +85,6 @@
   (let [access-token-response (oauth-client/access-token oauth-consumer
                                                          (get-request-token)
                                                          (:oauth_verifier params))]
-    {:status 200
-     :body (get-blog-posts (:oauth_token access-token-response)
-                           (:oauth_token_secret access-token-response))}))
+    (load-and-save-blog-posts (:oauth_token access-token-response)
+                              (:oauth_token_secret access-token-response))
+    (response/redirect (:index routes))))
