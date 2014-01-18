@@ -64,7 +64,7 @@
 
 (defn- load-and-save-blog-posts
   [oauth-token oauth-token-secret]
-  (let [blog-posts-json-response (get-blog-posts oauth-token oauth-token-secret)
+  (let [blog-posts-json-response (get-blog-posts)
         blog-posts (json/read-str blog-posts-json-response)]
     (datastore/blog-posts-save blog-posts)))
 
