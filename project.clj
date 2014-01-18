@@ -6,9 +6,11 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.6"]
 		 [clj-oauth "1.4.1"]
-                 [clj-http "0.7.8"]]
+                 [clj-http "0.7.8"]
+                 [enlive "1.1.5"]
+                 [com.taoensso/carmine "2.4.4"]]
   :plugins [[lein-ring "0.8.10"]]
-  :ring {:handler com.adamtait.foodwater-search.handler/app}
+  :ring {:handler com.adamtait.foodwater-search.dispatcher/app}
   :profiles
   {:dev {:dependencies [[ring-mock "0.1.5"]
                         [javax.servlet/servlet-api "2.5"]]}})
