@@ -12,10 +12,8 @@
 (def redis-key-prefix "com.adamtait.foodwater-search:")
 
 (def redis-keys
-  {:request-token (fn []
-                    (str redis-key-prefix "request-token"))
-   :blog-post (fn [number]
-                (str redis-key-prefix "blog-post:" number))})
+  {:request-token (str redis-key-prefix "request-token")
+   :blog-post (str redis-key-prefix "blog-posts")})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -23,12 +21,12 @@
 
 (defn request-token-load []
   (wcar redis-connection
-        (carmine/get ((:request-token redis-keys)))))
+        (carmine/get (:request-token redis-keys))))
 
 (defn request-token-save
   [request-token]
   (wcar redis-connection
-        (carmine/set ((:request-token redis-keys))
+        (carmine/set (:request-token redis-keys)
                      request-token)))
 
 
@@ -36,13 +34,18 @@
 ;; ## blog posts
 
 (defn blog-posts-load
-  [number]
+  [timestamp]
   (wcar redis-connection
-        (carmine/get ((:blog-post redis-keys) number))))
+        (carmine/hget (:blog-post redis-keys number) timestamp)))
+
+(defn blog-posts-load-all
+  []
+  (wcar redis-connection
+        (carmine/hgetall (:blog-post redis-keys number))))
 
 (defn blog-posts-save
   [blog-posts]
   (doseq [blog-post blog-posts]
     (wcar redis-connection
-          (carmine/set (((:blog-post redis-keys) (:timestamp blog-post))
-                        blog-post)))))
+          (carmine/hset (:blog-post redis-keys)
+                        (:timestamp blog-post) blog-post))))
