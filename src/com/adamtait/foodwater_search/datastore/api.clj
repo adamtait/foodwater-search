@@ -36,12 +36,12 @@
 (defn blog-posts-load
   [timestamp]
   (wcar redis-connection
-        (carmine/hget (:blog-post redis-keys number) timestamp)))
+        (carmine/hget (:blog-post redis-keys) timestamp)))
 
 (defn blog-posts-load-all
   []
   (wcar redis-connection
-        (carmine/hgetall (:blog-post redis-keys number))))
+        (carmine/hgetall (:blog-post redis-keys))))
 
 (defn blog-posts-save
   [blog-posts]
