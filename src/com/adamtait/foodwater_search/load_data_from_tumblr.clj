@@ -59,14 +59,18 @@
   "request info about the blog from the tumblr api"
   []
   (http-client/get (get-tumblr-api-uri :posts)
-                   {:query-params {:api_key oauth-key}
+                   {:query-params {:api_key oauth-key
+                                   :limit 9999}
                     :throw-exceptions false}))
 
 (defn- load-and-save-blog-posts
-  [oauth-token oauth-token-secret]
-  (let [blog-posts-json-response (get-blog-posts)
-        blog-posts (json/read-str blog-posts-json-response)]
-    (datastore/blog-posts-save blog-posts)))
+  []
+  (-> (get-blog-posts)
+      :body
+      (json/read-str :key-fn keyword)
+      :response
+      :posts
+      datastore/blog-posts-save))
 
 
 ;;; OAuth Flow
@@ -85,6 +89,5 @@
   (let [access-token-response (oauth-client/access-token oauth-consumer
                                                          (get-request-token)
                                                          (:oauth_verifier params))]
-    (load-and-save-blog-posts (:oauth_token access-token-response)
-                              (:oauth_token_secret access-token-response))
+    (load-and-save-blog-posts)
     (response/redirect (:index routes))))
