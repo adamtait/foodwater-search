@@ -57,20 +57,23 @@
 
 (defn- get-blog-posts
   "request info about the blog from the tumblr api"
-  []
+  [offset]
   (http-client/get (get-tumblr-api-uri :posts)
                    {:query-params {:api_key oauth-key
-                                   :limit 9999}
+                                   :offset offset}
                     :throw-exceptions false}))
 
 (defn- load-and-save-blog-posts
   []
-  (-> (get-blog-posts)
-      :body
-      (json/read-str :key-fn keyword)
-      :response
-      :posts
-      datastore/blog-posts-save))
+  (loop [offset 0]
+    (let [posts (-> (get-blog-posts offset)
+                    :body
+                    (json/read-str :key-fn keyword)
+                    :response
+                    :posts)]
+      (when (< (count posts) 0)
+        (datastore/blog-posts-save posts)
+        (recur (+ offset 20))))))
 
 
 ;;; OAuth Flow
