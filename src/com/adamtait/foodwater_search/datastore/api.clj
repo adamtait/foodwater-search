@@ -42,6 +42,7 @@
 
 (defn blog-posts-save
   [blog-posts]
-  (println "blog posts /" blog-posts "/")
-  (wcar redis-connection
-        carmine/set ((:blog-post redis-keys) blog-posts)))
+  (doseq [blog-post blog-posts]
+    (wcar redis-connection
+          (carmine/set (((:blog-post redis-keys) (:timestamp blog-post))
+                        blog-post)))))
